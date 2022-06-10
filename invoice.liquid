@@ -1,0 +1,129 @@
+<p style="float: right; text-align: right; margin: 0;">
+  Date {{ created_at | date: "%m/%d/%y" }}<br />
+  Invoice SR{{ order_name }}
+</p>
+<!--
+<p>
+{% comment %}
+    {% assign dss = order_name | split: '#'%}
+    DSS {{ dss[1] | plus: 100000 }}
+</p>
+{% endcomment %}
+-->
+
+<div style="float: left; margin: 0 0 1.5em 0;" >
+  <h3 style="margin: 0 0 1em 0;">S&R LLC</h3>
+
+{% if shipping_address %}
+  <div style="margin: 0 0 2em 0; padding-left: 100px; padding: 1em; border: 1px solid black; float: right;">
+    <strong>{{ shipping_address.name }}</strong><br/>
+    {{ shipping_address | format_address }}
+  </div>
+  {% endif %}
+
+
+<div style="float: left; padding-left: 1px; padding-top: 7px; padding-right: 21px;">
+<table class="order-total__table">
+{% capture order_list %} 
+{% for line in line_items %} 
+    {{ line.product.type }} 
+    {% if forloop.last == false %} {% endif%} 
+{% endfor %} 
+{% endcapture %} 
+
+{% assign type_array = order_list | split: ' '%} 
+{% assign uniq_type_array = type_array | uniq %} 
+{% assign subTotal = 0 %} 
+{% assign total = 0 %} 
+{% for uniqtype in uniq_type_array %} 
+    <tr>
+    {% for line in line_items %} 
+        {% if uniqtype == line.product.type %}
+            {% assign add = line.price | times: line.quantity %}
+            {% assign subTotal = subTotal | plus: add %} 
+        {% endif %} 
+    {% endfor %} 
+    <td style="padding-right:1em;">{{ uniqtype }}</td>
+    <td>{{ subTotal | money}}</td>
+    </tr>
+    {% assign total = total | plus: subTotal %} 
+    {% assign subTotal = 0 %} 
+{% endfor %}
+<tr class="order-total__line">
+<td><b>Total</b></td>
+<td><b>{{ total | money}}</b></td>
+</tr>
+</table>
+
+</div></div>
+
+<hr />
+
+<h3 style="margin: 0 0 1em 0;">Item Details</h3>
+
+<table class="table-tabular" style="margin: 0 0 1.5em 0;">
+  <thead>
+    <tr>
+      <th>Quantity</th>
+      <th>Sku</th>
+      <th>Item</th>
+      <th>Category</th>
+      <th>Price</th>
+      <th>Extensions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for line_item in line_items %}
+      <tr>
+        <td>{{ line_item.quantity }}</td>
+        <td><!-- Sku goes here --></td>
+        <td><b>{{ line_item.title }}</b></td>
+        <td>
+        {{ line_item.product.type }}
+        </td>
+        <td>
+        {% if line_item.original_price != line_item.price %}
+            <s>{{ line_item.original_price | money }}</s>
+          {% endif %}
+          {{ line_item.price | money }}
+        </td>
+        <td>
+          {% assign extensions = line_item.price | times: line_item.quantity %}
+            {{ extensions | money }}
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if transactions.size > 1 %}
+  <h3 style="margin: 0 0 1em 0;">Transaction Details</h3>
+  <table class="table-tabular" style="margin: 0 0 1.5em 0;">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Amount</th>
+        <th>Kind</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for transaction in transactions %}
+        <tr>
+          <td>{{ transaction.gateway | payment_method }}</td>
+          <td>{{ transaction.amount | money }}</td>
+          <td>{{ transaction.kind }}</td>
+          <td>{{ transaction.status }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+
+
+{% if note %}
+  <h3 style="margin: 0 0 1em 0;">Note</h3>
+  <p>{{ note }}</p>
+{% endif %}
+
+
